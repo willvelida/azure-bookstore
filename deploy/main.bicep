@@ -112,23 +112,20 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2021-12-01-pr
   }
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' = {
-  name: logAnalyticsWorkspaceName
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
+module logAnalytics 'modules/logAnalytics.bicep' = {
+  name: 'logAnalytics'
+  params: {
+    location: location
+    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
   }
 }
 
-resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
-  name: appInsightsName
-  location: location
-  kind: 'web'
-  properties: {
-    Application_Type: 'web'
-    WorkspaceResourceId: logAnalytics.id
+module appInsights 'modules/appInsights.bicep' = {
+  name: 'appInsights'
+  params: {
+    appInsightsName: appInsightsName 
+    location: location
+    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId 
   }
 }
 
@@ -152,8 +149,8 @@ resource environment 'Microsoft.App/managedEnvironments@2022-03-01' = {
    appLogsConfiguration: {
     destination: 'log-analytics'
     logAnalyticsConfiguration: {
-      customerId: logAnalytics.properties.customerId
-      sharedKey: logAnalytics.listKeys().primarySharedKey
+      customerId: logAnalytics.outputs.customerKey
+      sharedKey: logAnalytics.outputs.sharedKey
     }
    } 
   }
